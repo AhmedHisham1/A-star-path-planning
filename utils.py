@@ -52,13 +52,13 @@ def valid_actions(grid, current_node):
         valid.remove(Action.WEST)
     if y + 1 > m or grid[int(x), int(y+1)] == 1:
         valid.remove(Action.EAST)
-    if ((x-1) < 0 and (y+1) > m) or grid[int(x-1), int(y+1)] == 1:
+    if (x-1) < 0 or (y+1) > m or grid[int(x-1), int(y+1)] == 1:
         valid.remove(Action.NORTH_EAST)
-    if ((x-1) < 0 and (y-1) < 0) or grid[int(x-1),int(y-1)] == 1:
+    if (x-1) < 0 or (y-1) < 0 or grid[int(x-1),int(y-1)] == 1:
         valid.remove(Action.NORTH_WEST)
-    if ((x+1) > n and (y-1) < 0) or grid[int(x+1), int(y-1)] == 1:
+    if (x+1) > n or (y-1) < 0 or grid[int(x+1), int(y-1)] == 1:
         valid.remove(Action.SOUTH_WEST)
-    if ((x+1) > n and (y+1) > m) or grid[int(x+1), int(y+1)] == 1:
+    if (x+1) > n or (y+1) > m or grid[int(x+1), int(y+1)] == 1:
         valid.remove(Action.SOUTH_EAST)
     return valid
 

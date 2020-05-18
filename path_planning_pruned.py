@@ -39,7 +39,35 @@ def button_callback(event):
     pp = np.array(path)
     # ax.imshow(grid, cmap='Greys')
     ax.plot(pp[:, 1], pp[:, 0], linewidth=3)
+    pruned_path = np.array(prune_path(path))
+    ax.plot(pruned_path[:, 1], pruned_path[:, 0], 'g')
+    ax.scatter(pruned_path[:, 1], pruned_path[:, 0])
     plt.draw()
+
+def point(p):
+    return np.array([p[0], p[1], 1.]).reshape(1, -1)
+
+def collinearity_check(p1, p2, p3, epsilon=1e-6):
+    '''
+    returns True if points are collinear
+    '''
+    m = np.concatenate((p1, p2, p3), 0)
+    det = np.linalg.det(m)
+    return abs(det) < epsilon
+
+def prune_path(path):
+    pruned_path = [list(p) for p in path]
+    
+    i = 0
+    while i < len(pruned_path) - 2:
+        p1 = point(pruned_path[i])
+        p2 = point(pruned_path[i+1])
+        p3 = point(pruned_path[i+2])
+        if collinearity_check(p1, p2, p3):
+            pruned_path.remove(pruned_path[i+1])
+        else:
+            i += 1
+    return pruned_path
 
 def planned_path(home_loc, goal_loc, GRID_SIZE=200):
     global pp, grid, home_grid, goal_grid, ax
@@ -73,21 +101,21 @@ def planned_path(home_loc, goal_loc, GRID_SIZE=200):
     ax.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
     plt.show()
     
-    path = np.empty(pp.shape)
-    path[:,0] = lats[pp[:,0]]
-    path[:,1] = longs[pp[:,1]]
-    return path
+    pp_pruned = np.array(prune_path(pp))
+    pruned_path = np.empty(pp_pruned.shape)
+    pruned_path[:,0] = lats[pp_pruned[:,0]]
+    pruned_path[:,1] = longs[pp_pruned[:,1]]
+    return pruned_path
 
 if __name__ == "__main__":
     home_loc = [38.161437, -122.454534]
     goal_loc = [38.16210, -122.45653]
 
-    path = planned_path(home_loc, goal_loc, GRID_SIZE=200)
-    z = np.polyfit(path[:,1], path[:,0], 1)
-    p = np.poly1d(z)
-    plt.figure(2)
-    plt.plot(path[:,1], path[:,0])
-    plt.plot(path[:,1], p(path[:,1]))
+    pruned_path = planned_path(home_loc, goal_loc, GRID_SIZE=200)
+    plt.plot(pruned_path[:, 1], pruned_path[:, 0], '--g')
+    plt.scatter(pruned_path[:, 1], pruned_path[:, 0])
+    # plt.tick_params('both', length=2, width=1, which='major')
+    # plt.tick_params('both', length=2, width=1, which='minor')
     plt.show()
-    for waypoint in path:
+    for waypoint in pruned_path:
         print(waypoint)
