@@ -16,16 +16,7 @@ class Action(Enum):
     NORTH_WEST = (-1, -1, np.sqrt(2))
     SOUTH_WEST = (1, -1, np.sqrt(2))
     SOUTH_EAST = (1, 1, np.sqrt(2))
-    def __str__(self):
-        if self == self.WEST: return '<'
-        elif self == self.EAST: return '>'
-        elif self == self.NORTH: return '^'
-        elif self == self.SOUTH: return 'v'
-        elif self == self.NORTH_EAST: return '^>'
-        elif self == self.NORTH_WEST: return '^<'
-        elif self == self.SOUTH_WEST: return 'v<'
-        elif self == self.SOUTH_EAST: return 'v>'
-    
+
     @property
     def cost(self):
         return self.value[2]
@@ -61,21 +52,6 @@ def valid_actions(grid, current_node):
     if (x+1) > n or (y+1) > m or grid[int(x+1), int(y+1)] == 1:
         valid.remove(Action.SOUTH_EAST)
     return valid
-
-def visualize_path(grid, path, start):
-    sgrid = np.zeros(np.shape(grid), dtype=np.str)
-    sgrid[:] = ' '
-    sgrid[grid[:] == 1] = 'O'
-    
-    pos = start
-    
-    for a in path:
-        da = a.value
-        sgrid[pos[0], pos[1]] = str(a)
-        pos = (pos[0] + da[0], pos[1] + da[1])
-    sgrid[pos[0], pos[1]] = 'G'
-    sgrid[start[0], start[1]] = 'S'  
-    return sgrid
 
 def heuristic(position, goal_position):
     h = np.linalg.norm(np.array(goal_position) - np.array(position))
