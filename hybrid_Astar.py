@@ -7,11 +7,18 @@ class State:
     def __init__(self, x=0, y=0, theta=0, g=0, f=0, parent=None):
         self.x, self.y, self.theta, self.g, self.f, self.parent = x, y, theta, g, f, parent
     
-    def permitted(self, grid):
+    def is_inside(self, grid):
         '''
-        True if permitted
+        True if state lies inside the grid boundries.
         '''
         condition = not ((self.x < 0 or self.x >= grid.shape[1]) or (self.y < 0 or self.y >= grid.shape[0]))
+        return condition
+
+    def not_obstacle(self, grid):
+        '''
+        True if state is not inside an obstacle
+        '''
+        condition = grid[idx(self.x)][idx(self.y)] == 0
         return condition
 
 
@@ -39,7 +46,7 @@ def expand(state, goal):
     Calls the implementation of the bicycle model and the A* heuristic function.
     '''
     next_states = []
-    for delta in range(-35,35+15,15):
+    for delta in range(-35,35+5,5):
         next_x, next_y, next_theta = bicycle(state, delta*np.pi/180)
         next_g = state.g + 1
         next_f = next_g + heuristic(next_x, next_y, goal)
@@ -62,8 +69,8 @@ def idx(num):
     Returns the index in the grid
     '''
     # map_size = 25   # size of map in meters, assuming map is square. map is map_size x map_size
-    # grid_size = 500 # number of grid cells in each dimension, assuming grid is square. grid is grid_size x grid_size
-    # index = int(round(num*grid_size/map_size))
+    # grid_size = 100 # number of grid cells in each dimension, assuming grid is square. grid is grid_size x grid_size
+    # index = int(np.floor(num*grid_size/map_size))
     # return index
     return int(np.floor(num))
 
@@ -81,7 +88,7 @@ def path_reconstruction(expand_node):
 
     return np.array(path[::-1])
 
-def search(grid, start, goal):
+def search(grid, start, goal, visualize=False):
     '''
     '''
     opened = []
@@ -92,46 +99,58 @@ def search(grid, start, goal):
     stack_number = theta_to_stack_number(state.theta)
     closed[stack_number][idx(state.x)][idx(state.y)] = 1
 
+    if visualize:
+        plt.show()
+        plt.grid(b=True, which='major', color='#666666', linestyle='-')
+        plt.minorticks_on()
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        # ax = plt.gca()
+        # ax.set_xlim(0, grid.shape[0])
+        # ax.set_ylim(0, grid.shape[1])
+
     while len(opened) != 0:
         opened.sort(key=lambda state:state.f)   # sorting the opened states to start with the lowest f value.
-        current = opened.pop(0)     # returns the first state and removes it from opened list
+        current = opened.pop(0)                 # returns the first state and removes it from opened list
         path = path_reconstruction(current)
         # Plotting
-        # plt.plot(current.x, current.y, '.k')
-        plt.quiver(current.x, current.y, np.cos(current.theta), np.sin(current.theta), units='inches', 
-                    scale=5, zorder=3, color='green', width=0.007, headwidth=3, headlength=4)
-        plt.plot(path[:,0], path[:,1], '--')
-        plt.draw()
-        plt.pause(0.03)
+        if visualize:
+            plt.scatter(current.x, current.y, s=7, color='black')
+            plt.quiver(current.x, current.y, np.cos(current.theta), np.sin(current.theta), units='inches', 
+                        scale=5, zorder=3, color='green', width=0.007, headwidth=3, headlength=4)
+            plt.plot(path[:,0], path[:,1], '--')
+            plt.draw()
+            plt.pause(0.001)
         # 
         if (idx(current.x) == goal.x) and (idx(current.y) == goal.y):   # goal is reached
             path = path_reconstruction(current)
             return path
         next_states = expand(current, goal)
         for next_state in next_states:
-            if not next_state.permitted(grid):   # ignoring states outside of grid
+            if not next_state.is_inside(grid):   # ignoring states outside of grid
                 continue
             stack_number = theta_to_stack_number(next_state.theta)
-            if closed[stack_number][idx(next_state.x)][idx(next_state.y)] == 0 and grid[idx(next_state.x)][idx(next_state.y)] == 0:    # if not visited before and not obstacle
+            if closed[stack_number][idx(next_state.x)][idx(next_state.y)] == 0 and next_state.not_obstacle(grid):    # if not visited before and not obstacle
                 opened.append(next_state)
                 closed[stack_number][idx(next_state.x)][idx(next_state.y)] = 1    # mark as closed/visited
     print("Couldn't Find Path")
-    return path
+    return np.array([])
 
 if __name__ == "__main__":
     start = State(x=5, y=5, theta=0)
-    goal = State(x=50, y=20, theta=0)
+    goal = State(x=90, y=10, theta=0)
     grid = np.zeros((100,100))
-    # plt.figure()
-    plt.show()
+    grid[15:20,5:20] = 1
+    grid[35:40,35:70] = 1
+
+    path = search(grid, start, goal)
+    plt.figure()
+    plt.imshow(grid, cmap="binary", origin='lower')
+    plt.plot(path[:,1], path[:,0], 'r')
+    plt.scatter(path[:,1], path[:,0], s=7, color='black')
+    plt.quiver(path[:,1], path[:,0], np.sin(path[:,2]), np.cos(path[:,2]), units='inches', 
+                scale=5, zorder=3, color='blue', width=0.007, headwidth=3, headlength=4)
     plt.grid(b=True, which='major', color='#666666', linestyle='-')
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    ax = plt.gca()
-    # ax.set_xlim(0, grid.shape[0])
-    # ax.set_ylim(0, grid.shape[1])
-    path = search(grid, start, goal)
-    plt.figure()
-    plt.plot(path[:,0], path[:,1], 'k')
     plt.show()
     print(path)
