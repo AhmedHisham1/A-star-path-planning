@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from utils import a_star
+from map_plot import osm_plot
 
 x_old, y_old = None, None
 def onclick(event):
@@ -117,5 +118,6 @@ if __name__ == "__main__":
     # plt.tick_params('both', length=2, width=1, which='major')
     # plt.tick_params('both', length=2, width=1, which='minor')
     plt.show()
+    osm_plot(pruned_path)
     for waypoint in pruned_path:
         print(waypoint)
