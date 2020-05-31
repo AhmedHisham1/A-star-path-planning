@@ -4,7 +4,7 @@ from matplotlib.widgets import Button
 from map_plot import osm_plot
 
 NUM_THETA_CELLS = 45
-GRID_SIZE = 300
+GRID_SIZE = 100
 lats = np.linspace(38.1598, 38.163, num=GRID_SIZE, endpoint=True)
 longs = np.linspace(-122.457, -122.451, num=GRID_SIZE, endpoint=True)
 
@@ -91,7 +91,7 @@ def button_callback(event):
     ax.scatter(pp[:,0], pp[:,1])
     plt.draw()
 
-def bicycle(state, delta_rad, speed=2*1e-5, length=10*1e-5):
+def bicycle(state, delta_rad, speed=8*1e-5, length=10*1e-5):
     next_yaw = state.yaw + speed/length * np.tan(delta_rad)
     if next_yaw < 0 or next_yaw > 2*np.pi: next_yaw = (next_yaw + 2*np.pi) % (2*np.pi)
     next_long = state.long + speed*np.cos(state.yaw)
@@ -110,7 +110,7 @@ def expand(state, goal):
     Returns a list of possible next states for a range of steering angles.
     '''
     next_states = []
-    for delta in range(35,-35+5,-5):
+    for delta in range(15,-15+5,-5):
         next_long, next_lat, next_yaw = bicycle(state, delta*np.pi/180)
         next_g = state.g + 1
         next_f = next_g + heuristic(State(long=next_long, lat=next_lat, yaw=next_yaw, g=next_g), goal)
@@ -139,7 +139,7 @@ def path_reconstruction(expand_node):
 
     return np.array(path[::-1]), np.array(path_c[::-1])
 
-def search(grid, start, goal, visualize=True):
+def search(grid, start, goal, visualize=False):
     opened = []
     closed = np.zeros((NUM_THETA_CELLS, grid.shape[0], grid.shape[1]))
 
@@ -164,7 +164,7 @@ def search(grid, start, goal, visualize=True):
         opened.sort(key=lambda state:state.f)   # sorting the opened states to start with the lowest f value.
         current = opened.pop(0)                 # returns the first state and removes it from opened list
         # Plotting
-        if visualize and iteration%500 == 0:
+        if visualize and iteration%1 == 0:
             plt.imshow(grid, cmap="binary", origin='lower')
             plt.plot(start.x, start.y, 'x')
             plt.plot(goal.x, goal.y, 'x')
@@ -174,7 +174,7 @@ def search(grid, start, goal, visualize=True):
             path, _ = path_reconstruction(current)
             plt.plot(path[:,0], path[:,1], '--')
             plt.draw()
-            plt.pause(0.0001)
+            plt.pause(0.001)
         # 
         if (current.x == goal.x) and (current.y == goal.y):   # goal is reached
             print(f'iterations: {iteration}')
@@ -189,7 +189,7 @@ def search(grid, start, goal, visualize=True):
                 opened.append(next_state)
                 closed[stack_number][next_state.x][next_state.y] = 1    # mark as closed/visited
     print("Couldn't Find Path")
-    return None
+    return None, None
 
 def discretize_world(home_loc, goal_loc):
     '''
